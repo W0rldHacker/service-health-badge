@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+/dist/* linguist-generated
+*.map -diff

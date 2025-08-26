@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>service-health-badge — E3.1 demo</title>
+    <script type="module" src="/dist/service-health-badge.js"></script>
+    <style>
+      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+      .row { display:flex; gap:1rem; align-items:center; margin: .5rem 0; }
+      code { background: #f3f4f6; padding: .15rem .35rem; border-radius: .35rem; }
+    </style>
+  </head>
+  <body>
+    <h1>service-health-badge — E3.1</h1>
+
+    <div class="row">
+      <service-health-badge variant="dot"></service-health-badge>
+      <code>variant="dot"</code>
+    </div>
+
+    <div class="row">
+      <service-health-badge variant="chip"></service-health-badge>
+      <code>variant="chip"</code>
+    </div>
+
+    <div class="row">
+      <service-health-badge variant="badge"></service-health-badge>
+      <code>variant="badge"</code>
+    </div>
+
+    <p>Все элементы стартуют в состоянии <strong>unknown</strong> и используют дефолтные лейблы.</p>
+  </body>
+</html>

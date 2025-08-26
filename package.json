@@ -1,0 +1,93 @@
+{
+  "name": "@worldhacker/service-health-badge",
+  "version": "0.3.0",
+  "description": "Embedded service health badge Web Component (<service-health-badge>)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/W0rldHacker/service-health-badge.git"
+  },
+  "homepage": "https://github.com/W0rldHacker/service-health-badge#readme",
+  "bugs": {
+    "url": "https://github.com/W0rldHacker/service-health-badge/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/service-health-badge.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "dist/service-health-badge.js",
+  "module": "dist/service-health-badge.js",
+  "types": "dist/types/src/index.d.ts",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --minify --sourcemap --format=esm --outfile=dist/service-health-badge.js",
+    "dev": "npm run build -- --watch",
+    "lint": "eslint .",
+    "format": "prettier -c .",
+    "format:write": "prettier -w .",
+    "types": "tsc -p tsconfig.types.json",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "size": "npm run build && size-limit",
+    "prepare": "husky install",
+    "preview": "npm run build && esbuild --servedir=.",
+    "release": "semantic-release",
+    "mock": "node mock/server.mjs"
+  },
+  "engines": {
+    "node": ">=20.10.0 || >=22.0.0"
+  },
+  "keywords": [
+    "web-components",
+    "custom-elements",
+    "status",
+    "badge",
+    "health",
+    "uptime"
+  ],
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.4",
+    "@semantic-release/npm": "^12.0.2",
+    "@size-limit/esbuild": "^11.2.0",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@worldhacker/starpath": "file:../Starpath.js/worldhacker-starpath-0.6.2-F7Ib+1.98 (Polaris).tgz",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.3.0",
+    "happy-dom": "^18.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "semantic-release": "^24.2.7",
+    "size-limit": "^11.2.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "npm@11.5.2",
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --fix"
+    ],
+    "*.{js,ts,css,html,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "size-limit": [
+    {
+      "path": "dist/service-health-badge.js",
+      "limit": "5 KB"
+    }
+  ]
+}

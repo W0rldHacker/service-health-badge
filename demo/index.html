@@ -3,75 +3,66 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>service-health-badge — E3.2 demo</title>
+    <title>service-health-badge — E4.1 demo</title>
     <script type="module" src="/dist/service-health-badge.js"></script>
     <style>
       body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-      .row { display:flex; gap:1rem; align-items:center; margin: .5rem 0; }
-      fieldset { border:1px solid #e5e7eb; border-radius:.5rem; padding:1rem; }
+      .row { display:flex; gap:1rem; align-items:center; margin:.5rem 0; }
+      fieldset { border:1px solid #e5e7eb; border-radius:.5rem; padding:1rem; margin-top:1rem; }
       label { display:flex; gap:.5rem; align-items:center; margin:.25rem 0; }
-      input[type="number"] { width: 8rem; }
-      textarea { width: 28rem; height: 6rem; }
+      code { background:#f3f4f6; padding:.1rem .35rem; border-radius:.35rem; }
     </style>
   </head>
   <body>
-    <h1>service-health-badge — E3.2</h1>
-
-    <div class="row">
-      <service-health-badge id="badge-focus" focusable variant="badge"></service-health-badge>
-      <code>focusable</code>
-    </div>
+    <h1>service-health-badge — E4.1</h1>
 
     <div class="row">
       <service-health-badge id="badge" variant="badge"></service-health-badge>
+      <code>variant="badge"</code>
     </div>
 
     <fieldset>
-      <legend>Параметры</legend>
-      <label>
-        Variant:
-        <select id="variant">
-          <option>badge</option>
-          <option>chip</option>
-          <option>dot</option>
+      <legend>Управление состоянием</legend>
+      <label>Статус:
+        <select id="state">
+          <option value="unknown">unknown</option>
+          <option value="ok">ok</option>
+          <option value="degraded">degraded</option>
+          <option value="down">down</option>
+          <option value="offline">offline</option>
         </select>
       </label>
-      <label>
-        Show latency:
-        <input id="showLatency" type="checkbox" checked />
-      </label>
-      <label>
-        Interval (ms):
-        <input id="interval" type="number" value="10000" min="1" step="100" />
-      </label>
-      <label>
-        Timeout (ms):
-        <input id="timeout" type="number" value="3000" min="1" step="100" />
-      </label>
-      <label style="align-items:flex-start">
-        Labels (JSON):
-        <textarea id="labels">{"ok":"OK","degraded":"Degraded","down":"Down","unknown":"—","offline":"Offline"}</textarea>
-      </label>
+      <label>Latency (ms): <input type="number" id="lat" value="120" min="0" step="10" /></label>
+      <button id="apply">Применить</button>
+
+      <hr />
+      <label><input type="checkbox" id="shake" /> Смоделировать дрожание (переключать ok↔degraded каждые 200мс)</label>
     </fieldset>
 
     <script type="module">
       const el = document.getElementById('badge');
       const $ = (id) => document.getElementById(id);
 
-      $('variant').addEventListener('change', (e) => {
-        el.variant = e.target.value; // свойство → атрибут
+      $('apply').addEventListener('click', () => {
+        const s = /** @type {import('../dist/types/src/index.d.ts').HealthStatus} */($('state').value);
+        const lat = Number($('lat').value);
+        el.setAttribute('dev-state', s);
+        el.setState(s, lat);
       });
-      $('showLatency').addEventListener('change', (e) => {
-        el.showLatency = e.target.checked; // true → remove attr; false → attr="false"
-      });
-      $('interval').addEventListener('input', (e) => {
-        el.interval = Number(e.target.value);
-      });
-      $('timeout').addEventListener('input', (e) => {
-        el.timeout = Number(e.target.value);
-      });
-      $('labels').addEventListener('input', (e) => {
-        try { el.labels = JSON.parse(e.target.value || '{}'); } catch {}
+
+      let t;
+      $('shake').addEventListener('change', (e) => {
+        if (e.target.checked) {
+          let flag = false;
+          const tick = () => {
+            flag = !flag;
+            el.setState(flag ? 'ok' : 'degraded', 50 + Math.round(Math.random()*50));
+            t = setTimeout(tick, 200);
+          };
+          tick();
+        } else {
+          clearTimeout(t);
+        }
       });
     </script>
   </body>

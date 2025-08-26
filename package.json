@@ -1,6 +1,6 @@
 {
   "name": "@worldhacker/service-health-badge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Embedded service health badge Web Component (<service-health-badge>)",
   "license": "MIT",
   "repository": {

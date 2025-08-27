@@ -77,5 +77,23 @@
         }
       });
     </script>
+
+    <fieldset>
+      <legend>Пороговая деградация</legend>
+      <label>degraded-threshold-ms: <input type="number" id="thr" value="0" min="0" step="50" /></label>
+      <button id="okFast">OK (80ms)</button>
+      <button id="okSlow">OK (900ms)</button>
+    </fieldset>
+    <script type="module">
+      const el2 = document.getElementById('badge');
+      const thr = document.getElementById('thr');
+      thr.addEventListener('input', () => {
+        const v = Number(thr.value);
+        if (v > 0) el2.setAttribute('degraded-threshold-ms', String(v));
+        else el2.removeAttribute('degraded-threshold-ms');
+      });
+      document.getElementById('okFast').onclick = () => el2.setState('ok', 80);
+      document.getElementById('okSlow').onclick = () => el2.setState('ok', 900);
+    </script>
   </body>
 </html>

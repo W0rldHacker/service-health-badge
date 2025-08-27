@@ -41,21 +41,34 @@ export class ServiceHealthBadge extends HTMLElement {
 
     this._root.innerHTML = `
       <style>
-        :host { display:inline-block; font: 500 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--health-color-fg, #111827); outline: none; }
-        :host(:focus-visible) { outline: 2px solid var(--health-focus-ring, #2563eb); outline-offset: 2px; border-radius: var(--health-radius, .5rem); }
+        :host {
+          display: inline-block;
+          font: 500 var(--health-size, 0.875rem)/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+          color: var(--health-color-fg, currentColor);
+          outline: none;
+        }
+        :host(:focus-visible) {
+          outline: 2px solid var(--health-focus-ring, #2563eb);
+          outline-offset: 2px;
+          border-radius: var(--health-radius, .5rem);
+        }
 
-        .wrap { display:inline-flex; align-items:center; gap:.4em; padding:.25em .5em; border-radius: var(--health-radius, .5rem); background: var(--health-chip-bg, transparent); }
-        .dot { width:.6em; height:.6em; border-radius:50%; flex:0 0 auto; background: var(--health-bg-unknown, #6b7280); }
-        .label { white-space:nowrap; }
-        .lat { opacity:.7; font-variant-numeric: tabular-nums; }
+        .wrap {
+          display: inline-flex; align-items: center; gap: .4em;
+          padding: .25em .5em; border-radius: var(--health-radius, .5rem);
+          background: var(--health-chip-bg, rgba(0,0,0,0.05));
+        }
+        .dot { width: .6em; height: .6em; border-radius: 50%; flex: 0 0 auto; background: var(--health-bg-unknown, #6b7280); }
+        .label { white-space: nowrap; }
+        .lat { opacity: .7; font-variant-numeric: tabular-nums; }
 
-        .wrap[data-s="ok"]       .dot { background: var(--health-bg-ok, #16a34a); }
+        .wrap[data-s="ok"] .dot { background: var(--health-bg-ok, #16a34a); }
         .wrap[data-s="degraded"] .dot { background: var(--health-bg-degraded, #f59e0b); }
-        .wrap[data-s="down"]     .dot { background: var(--health-bg-down, #ef4444); }
-        .wrap[data-s="offline"]  .dot { background: var(--health-bg-offline, #94a3b8); }
+        .wrap[data-s="down"] .dot { background: var(--health-bg-down, #ef4444); }
+        .wrap[data-s="offline"] .dot { background: var(--health-bg-offline, #94a3b8); }
 
-        :host([variant="dot"]) .label, :host([variant="dot"]) .lat { display:none; }
-        :host([variant="chip"]) .lat { display:none; }
+        :host([variant="dot"]) .label, :host([variant="dot"]) .lat { display: none; }
+        :host([variant="chip"]) .lat { display: none; }
 
         @media (forced-colors: active) {
           .wrap { forced-color-adjust: none; background: Canvas; color: CanvasText; border: 1px solid CanvasText; }
@@ -66,8 +79,6 @@ export class ServiceHealthBadge extends HTMLElement {
           .wrap[data-s="degraded"] .dot { background: CanvasText; }
           :host(:focus-visible) { outline-color: Highlight; }
         }
-
-        @media (prefers-contrast: more) { .lat { opacity: 1; } }
       </style>
       <div class="wrap" data-s="unknown" role="status" aria-live="polite" aria-atomic="true" title="">
         <span class="dot" aria-hidden="true"></span>

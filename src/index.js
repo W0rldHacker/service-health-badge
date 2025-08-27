@@ -49,6 +49,10 @@ export class ServiceHealthBadge extends HTMLElement {
     /** @private */ this._onVis = () => {};
     /** @private */ this._onNet = () => {};
 
+    /** @private */ this._mountedAt = Date.now();
+    /** @private */ this._lastDataTs = /** @type {number|null} */ (null);
+    /** @private */ this._pendingVisual = /** @type {HealthStatus|undefined} */ (undefined);
+
     this._root.innerHTML = `
       <style>
         :host {
@@ -113,6 +117,8 @@ export class ServiceHealthBadge extends HTMLElement {
     };
     window.addEventListener('online', this._onNet, { passive: true });
     window.addEventListener('offline', this._onNet, { passive: true });
+
+    this._mountedAt = Date.now();
 
     if (this._cfg.endpoint) this._startPolling(true);
 
@@ -283,9 +289,10 @@ export class ServiceHealthBadge extends HTMLElement {
     const allowed = new Set(['unknown', 'ok', 'degraded', 'down', 'offline']);
     const base = /** @type {HealthStatus} */ (allowed.has(status) ? status : 'unknown');
     this._lastInputStatus = base;
-    const prev = this._stateActual;
 
+    const prev = this._stateActual;
     const nextEff = this.#applyThreshold(base, latencyMs);
+
     this._latencyMs = Number.isFinite(latencyMs)
       ? Math.round(/** @type {number} */ (latencyMs))
       : null;
@@ -297,18 +304,21 @@ export class ServiceHealthBadge extends HTMLElement {
         })
       );
     }
-
     this._stateActual = nextEff;
 
-    if (this._debounceT) {
-      clearTimeout(this._debounceT);
-      this._debounceT = undefined;
-    }
     if (this._stateVisual !== this._stateActual) {
+      if (this._debounceT && this._pendingVisual === this._stateActual) {
+        return;
+      }
+      if (this._debounceT) clearTimeout(this._debounceT);
+      this._pendingVisual = this._stateActual;
       this._debounceT = /** @type {any} */ (
         setTimeout(() => {
           this._debounceT = undefined;
-          this._stateVisual = this._stateActual;
+          this._stateVisual = /** @type {HealthStatus} */ (
+            this._pendingVisual ?? this._stateActual
+          );
+          this._pendingVisual = undefined;
           this.#renderVisual(this._stateVisual);
         }, DEBOUNCE_MS)
       );
@@ -321,7 +331,7 @@ export class ServiceHealthBadge extends HTMLElement {
     const url = this._cfg.endpoint;
     if (!url) return true;
 
-    if (navigator && 'onLine' in navigator && navigator.onLine === false) {
+    if ('onLine' in navigator && navigator.onLine === false) {
       this.setState('offline', null);
       return false;
     }
@@ -374,6 +384,8 @@ export class ServiceHealthBadge extends HTMLElement {
         this.setState('down', latencyMs);
         return false;
       }
+
+      this._lastDataTs = Date.now();
 
       const s = data && typeof data.status === 'string' ? data.status.toLowerCase() : 'ok';
       const base =
@@ -505,6 +517,11 @@ export class ServiceHealthBadge extends HTMLElement {
     if (Number.isFinite(this._latencyMs)) parts.push(`Latency: ${this._latencyMs} ms`);
     if (this._cfg.degradedThresholdMs > 0)
       parts.push(`Degraded≥${this._cfg.degradedThresholdMs} ms`);
+
+    const since = this._lastDataTs ?? this._mountedAt;
+    const isStale = Date.now() - since > this._cfg.interval * 2;
+    if (isStale) parts.push('Данные устарели');
+
     wrap.setAttribute('title', parts.join(' • '));
   }
 

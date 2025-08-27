@@ -107,5 +107,18 @@
       const ep = document.getElementById('ep');
       document.getElementById('doFetch').onclick = () => { el3.endpoint = ep.value; el3.refresh(); };
     </script>
+
+    <fieldset>
+      <legend>Stale‑guard</legend>
+      <button id="freeze">Заморозить данные (имитировать ошибки)</button>
+      <button id="unfreeze">Снять заморозку</button>
+      <p><small>Подсказка «Данные устарели» появится через 2×interval без валидных ответов.</small></p>
+    </fieldset>
+    <script type="module">
+      let frozen = false;
+      const origFetch = window.fetch.bind(window);
+      document.getElementById('freeze').onclick = () => { frozen = true; window.fetch = async () => { throw new TypeError('Network down (mock)'); }; };
+      document.getElementById('unfreeze').onclick = () => { frozen = false; window.fetch = origFetch; };
+    </script>
   </body>
 </html>

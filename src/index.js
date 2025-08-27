@@ -10,10 +10,10 @@ const DEFAULTS = {
   labels: { ok: 'OK', degraded: 'Degraded', down: 'Down', unknown: '—', offline: 'Offline' },
   variant: 'badge',
   showLatency: true,
-  degradedThresholdMs: 0, // 0 => выключено
+  degradedThresholdMs: 0,
 };
 
-const DEBOUNCE_MS = 500; // анти‑дребезг визуала
+const DEBOUNCE_MS = 500;
 
 export class ServiceHealthBadge extends HTMLElement {
   static get observedAttributes() {
@@ -42,6 +42,9 @@ export class ServiceHealthBadge extends HTMLElement {
     /** @private */ this._latencyMs = /** @type {number|null} */ (null);
     /** @private */ this._debounceT = /** @type {number|undefined} */ (undefined);
     /** @private */ this._inflight = /** @type {AbortController|null} */ (null);
+
+    /** @private */ this._timer = /** @type {number|undefined} */ (undefined);
+    /** @private */ this._backoffMs = DEFAULTS.interval;
 
     this._root.innerHTML = `
       <style>
@@ -83,8 +86,7 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#applyFocusability();
     this.#renderVisual('unknown');
 
-    // Одноразовый запрос при наличии endpoint (планировщик добавим на E5.2)
-    if (this._cfg.endpoint) this.refresh();
+    if (this._cfg.endpoint) this._startPolling(true);
   }
 
   disconnectedCallback() {
@@ -92,6 +94,7 @@ export class ServiceHealthBadge extends HTMLElement {
       this._inflight.abort();
       this._inflight = null;
     }
+    this._stopPolling();
   }
 
   attributeChangedCallback(name, _old, _val) {
@@ -101,31 +104,50 @@ export class ServiceHealthBadge extends HTMLElement {
     if (name === 'dev-state') {
       const s = this.getAttribute('dev-state');
       const allowed = ['unknown', 'ok', 'degraded', 'down', 'offline'];
-      if (s && allowed.includes(s)) this.setState(/** @type {HealthStatus} */ (s));
+      if (s && allowed.includes(s)) this.setState(/** @type {any} */ (s));
       return;
     }
 
     this.#readAttributes();
     if (name === 'focusable') this.#applyFocusability();
 
-    if (name === 'endpoint' || name === 'timeout') {
-      // При смене критичных параметров перезапустить одноразовый опрос
-      if (this._inflight) {
-        this._inflight.abort();
-        this._inflight = null;
-      }
-      if (this._cfg.endpoint) this.refresh();
+    if (name === 'endpoint' || name === 'interval' || name === 'timeout') {
+      this._stopPolling();
+      if (this._cfg.endpoint) this._startPolling(true);
     }
 
     if (name === 'degraded-threshold-ms') {
       this.#recomputeEffectiveFromInputs();
       return;
     }
-
     this.#renderVisual(this._stateVisual);
   }
 
-  // ========= Публичные свойства =========
+  _startPolling(immediate = false) {
+    this._backoffMs = this._cfg.interval;
+    this._queueNext(immediate ? 0 : this._backoffMs);
+  }
+
+  _stopPolling() {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = undefined;
+    }
+  }
+
+  _queueNext(delayMs) {
+    this._stopPolling();
+    this._timer = /** @type {any} */ (setTimeout(() => this._pollOnce(), Math.max(0, delayMs)));
+  }
+
+  async _pollOnce() {
+    if (!this._cfg.endpoint) return;
+    const success = await this.refresh();
+    const prev = Math.max(this._backoffMs, this._cfg.interval);
+    this._backoffMs = success ? this._cfg.interval : Math.min(prev * 2, 60000);
+    this._queueNext(this._backoffMs);
+  }
+
   get focusable() {
     return !!this._cfg.focusable;
   }
@@ -205,7 +227,6 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#recomputeEffectiveFromInputs();
   }
 
-  // ========= FSM API =========
   setState(/** @type {HealthStatus} */ status, /** @type {number|null} */ latencyMs = null) {
     if (!status) return;
     const allowed = new Set(['unknown', 'ok', 'degraded', 'down', 'offline']);
@@ -245,18 +266,15 @@ export class ServiceHealthBadge extends HTMLElement {
     }
   }
 
-  // ========= Сетевой слой =========
-  /** Выполняет один запрос к endpoint с тайм-аутом и устойчивым парсингом. */
   async refresh() {
     const url = this._cfg.endpoint;
-    if (!url) return;
+    if (!url) return true;
 
     if (navigator && 'onLine' in navigator && navigator.onLine === false) {
       this.setState('offline', null);
-      return;
+      return false;
     }
 
-    // отмена предыдущего запроса
     if (this._inflight) {
       this._inflight.abort();
     }
@@ -277,22 +295,19 @@ export class ServiceHealthBadge extends HTMLElement {
       clearTimeout(to);
 
       const text = await res.text();
-      let data = /** @type {any} */ ({});
+      let data = {};
       if (text.length > 0) {
         try {
           data = JSON.parse(text);
         } catch (e) {
-          // 2xx с битым JSON → unknown + health-error
           this.dispatchEvent(
             new CustomEvent('health-error', { detail: { error: `JSON parse error: ${String(e)}` } })
           );
           this.setState('unknown', null);
-          return;
+          return false;
         }
       }
 
-      // Вычисление latency
-      /** @type {number|null} */
       const latencyMs = Number.isFinite(data?.timings?.total_ms)
         ? Math.round(Number(data.timings.total_ms))
         : Math.round(
@@ -306,17 +321,14 @@ export class ServiceHealthBadge extends HTMLElement {
           new CustomEvent('health-error', { detail: { error: `HTTP ${res.status}` } })
         );
         this.setState('down', latencyMs);
-        return;
+        return false;
       }
 
-      // Определение базового статуса
       const s = data && typeof data.status === 'string' ? data.status.toLowerCase() : 'ok';
       const base =
-        s === 'ok' || s === 'degraded' || s === 'down'
-          ? /** @type {HealthStatus} */ (s)
-          : 'unknown';
-
+        s === 'ok' || s === 'degraded' || s === 'down' ? /** @type {any} */ (s) : 'unknown';
       this.setState(base, latencyMs);
+      return base === 'ok' || base === 'degraded';
     } catch (err) {
       clearTimeout(to);
       const isAbort =
@@ -327,12 +339,12 @@ export class ServiceHealthBadge extends HTMLElement {
       const msg = isAbort ? 'Timeout exceeded' : `Network/CORS error: ${String(err)}`;
       this.dispatchEvent(new CustomEvent('health-error', { detail: { error: msg } }));
       this.setState('down', null);
+      return false;
     } finally {
       if (this._inflight === ctrl) this._inflight = null;
     }
   }
 
-  // ========= Приватные =========
   #reflect(name, value) {
     this._syncing = true;
     try {

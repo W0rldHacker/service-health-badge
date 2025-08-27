@@ -46,9 +46,8 @@ export class ServiceHealthBadge extends HTMLElement {
 
     /** @private */ this._timer = /** @type {number|undefined} */ (undefined);
     /** @private */ this._backoffMs = DEFAULTS.interval;
-    /** @private */ this._onVis = () => {
-      /* filled in connectedCallback */
-    };
+    /** @private */ this._onVis = () => {};
+    /** @private */ this._onNet = () => {};
 
     this._root.innerHTML = `
       <style>
@@ -102,7 +101,25 @@ export class ServiceHealthBadge extends HTMLElement {
     };
     document.addEventListener('visibilitychange', this._onVis, { passive: true });
 
+    this._onNet = () => {
+      if ('onLine' in navigator && navigator.onLine === false) {
+        this._stopPolling();
+        this.setState('offline', null);
+      } else {
+        if (this._cfg.endpoint) {
+          this._startPolling(true);
+        }
+      }
+    };
+    window.addEventListener('online', this._onNet, { passive: true });
+    window.addEventListener('offline', this._onNet, { passive: true });
+
     if (this._cfg.endpoint) this._startPolling(true);
+
+    if ('onLine' in navigator && navigator.onLine === false) {
+      this._stopPolling();
+      this.setState('offline', null);
+    }
   }
 
   disconnectedCallback() {
@@ -112,6 +129,8 @@ export class ServiceHealthBadge extends HTMLElement {
     }
     this._stopPolling();
     document.removeEventListener('visibilitychange', this._onVis);
+    window.removeEventListener('online', this._onNet);
+    window.removeEventListener('offline', this._onNet);
   }
 
   attributeChangedCallback(name, _old, _val) {
@@ -165,6 +184,14 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   async _pollOnce() {
+    const url = this._cfg.endpoint;
+    if (!url) return true;
+
+    if ('onLine' in navigator && navigator.onLine === false) {
+      this.setState('offline', null);
+      return false;
+    }
+
     if (!this._cfg.endpoint) return;
     const success = await this.refresh();
     const prev = Math.max(this._backoffMs, this._cfg.interval);

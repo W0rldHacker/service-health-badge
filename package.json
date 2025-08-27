@@ -1,6 +1,6 @@
 {
   "name": "@worldhacker/service-health-badge",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Embedded service health badge Web Component (<service-health-badge>)",
   "license": "MIT",
   "repository": {
@@ -33,7 +33,7 @@
     "types": "tsc -p tsconfig.types.json",
     "test": "vitest run",
     "test:a11y": "playwright test e2e/a11y.spec.ts",
-    "test:e2e": "playwright test e2e/visibility.spec.ts",
+    "test:e2e": "playwright test",
     "coverage": "vitest run --coverage",
     "size": "npm run build && size-limit",
     "prepare": "husky install",

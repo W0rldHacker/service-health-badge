@@ -14,7 +14,7 @@ test('component has no critical a11y issues', async ({ page }) => {
 
 test('focus ring is visible when focusable', async ({ page }) => {
   await page.goto(DEMO);
-  const el = page.locator('#badge-focus');
+  const el = page.locator('#badge');
   await el.focus();
   const outline = await el.evaluate((n) => getComputedStyle(n).outlineStyle);
   expect(outline).not.toBe('none');

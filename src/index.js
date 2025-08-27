@@ -14,6 +14,7 @@ const DEFAULTS = {
 };
 
 const DEBOUNCE_MS = 500;
+const VIS_HIDDEN_MULT = 3;
 
 export class ServiceHealthBadge extends HTMLElement {
   static get observedAttributes() {
@@ -45,6 +46,9 @@ export class ServiceHealthBadge extends HTMLElement {
 
     /** @private */ this._timer = /** @type {number|undefined} */ (undefined);
     /** @private */ this._backoffMs = DEFAULTS.interval;
+    /** @private */ this._onVis = () => {
+      /* filled in connectedCallback */
+    };
 
     this._root.innerHTML = `
       <style>
@@ -86,6 +90,18 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#applyFocusability();
     this.#renderVisual('unknown');
 
+    this._onVis = () => {
+      const vis = (typeof document !== 'undefined' && document.visibilityState) || 'visible';
+      if (vis === 'visible') {
+        this._backoffMs = this._cfg.interval;
+        this._queueNext(0);
+      } else {
+        const delay = Math.min(this._backoffMs * VIS_HIDDEN_MULT, 60000);
+        this._queueNext(delay);
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVis, { passive: true });
+
     if (this._cfg.endpoint) this._startPolling(true);
   }
 
@@ -95,6 +111,7 @@ export class ServiceHealthBadge extends HTMLElement {
       this._inflight = null;
     }
     this._stopPolling();
+    document.removeEventListener('visibilitychange', this._onVis);
   }
 
   attributeChangedCallback(name, _old, _val) {
@@ -125,7 +142,7 @@ export class ServiceHealthBadge extends HTMLElement {
 
   _startPolling(immediate = false) {
     this._backoffMs = this._cfg.interval;
-    this._queueNext(immediate ? 0 : this._backoffMs);
+    this._queueNext(immediate ? 0 : this._withVisibility(this._backoffMs));
   }
 
   _stopPolling() {
@@ -137,7 +154,14 @@ export class ServiceHealthBadge extends HTMLElement {
 
   _queueNext(delayMs) {
     this._stopPolling();
-    this._timer = /** @type {any} */ (setTimeout(() => this._pollOnce(), Math.max(0, delayMs)));
+    const d = this._withVisibility(delayMs);
+    this._timer = /** @type {any} */ (setTimeout(() => this._pollOnce(), Math.max(0, d)));
+  }
+
+  _withVisibility(ms) {
+    const vis = (typeof document !== 'undefined' && document.visibilityState) || 'visible';
+    const mult = vis === 'visible' ? 1 : VIS_HIDDEN_MULT;
+    return Math.min(Math.max(0 | ms, 0), 60000) * mult;
   }
 
   async _pollOnce() {

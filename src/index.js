@@ -25,8 +25,8 @@ export class ServiceHealthBadge extends HTMLElement {
       'variant',
       'show-latency',
       'focusable',
-      'degraded-threshold-ms', // ← новый атрибут
-      'dev-state', // только для демо/разработки
+      'degraded-threshold-ms',
+      'dev-state',
     ];
   }
 
@@ -34,13 +34,14 @@ export class ServiceHealthBadge extends HTMLElement {
     super();
     /** @private */ this._root = this.attachShadow({ mode: 'open' });
     /** @private */ this._cfg = { ...DEFAULTS, endpoint: null, focusable: false };
-    /** @private */ this._syncing = false; // отражение свойств → атрибуты
+    /** @private */ this._syncing = false;
 
     /** @private */ this._lastInputStatus = /** @type {HealthStatus} */ ('unknown');
-    /** @private */ this._stateActual = /** @type {HealthStatus} */ ('unknown'); // эффективный статус
+    /** @private */ this._stateActual = /** @type {HealthStatus} */ ('unknown');
     /** @private */ this._stateVisual = /** @type {HealthStatus} */ ('unknown');
     /** @private */ this._latencyMs = /** @type {number|null} */ (null);
     /** @private */ this._debounceT = /** @type {number|undefined} */ (undefined);
+    /** @private */ this._inflight = /** @type {AbortController|null} */ (null);
 
     this._root.innerHTML = `
       <style>
@@ -81,6 +82,16 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#readAttributes();
     this.#applyFocusability();
     this.#renderVisual('unknown');
+
+    // Одноразовый запрос при наличии endpoint (планировщик добавим на E5.2)
+    if (this._cfg.endpoint) this.refresh();
+  }
+
+  disconnectedCallback() {
+    if (this._inflight) {
+      this._inflight.abort();
+      this._inflight = null;
+    }
   }
 
   attributeChangedCallback(name, _old, _val) {
@@ -97,7 +108,15 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#readAttributes();
     if (name === 'focusable') this.#applyFocusability();
 
-    // При изменении порога — пересчитать эффективный статус из последних входных данных
+    if (name === 'endpoint' || name === 'timeout') {
+      // При смене критичных параметров перезапустить одноразовый опрос
+      if (this._inflight) {
+        this._inflight.abort();
+        this._inflight = null;
+      }
+      if (this._cfg.endpoint) this.refresh();
+    }
+
     if (name === 'degraded-threshold-ms') {
       this.#recomputeEffectiveFromInputs();
       return;
@@ -175,7 +194,6 @@ export class ServiceHealthBadge extends HTMLElement {
     this.#renderVisual(this._stateVisual);
   }
 
-  /** Порог деградации в мс; 0 — отключено */
   get degradedThresholdMs() {
     return this._cfg.degradedThresholdMs;
   }
@@ -188,27 +206,18 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   // ========= FSM API =========
-  /**
-   * Обновляет входной (базовый) статус и latency, применяет порог деградации и анти‑дребезг визуала.
-   * @param {HealthStatus} status базовый статус из сети/логики
-   * @param {number|null} [latencyMs] измеренная латентность в мс
-   */
-  setState(status, latencyMs = null) {
+  setState(/** @type {HealthStatus} */ status, /** @type {number|null} */ latencyMs = null) {
     if (!status) return;
     const allowed = new Set(['unknown', 'ok', 'degraded', 'down', 'offline']);
     const base = /** @type {HealthStatus} */ (allowed.has(status) ? status : 'unknown');
     this._lastInputStatus = base;
     const prev = this._stateActual;
 
-    // Применить пороговую деградацию
     const nextEff = this.#applyThreshold(base, latencyMs);
-
-    // Запомнить latency
     this._latencyMs = Number.isFinite(latencyMs)
       ? Math.round(/** @type {number} */ (latencyMs))
       : null;
 
-    // Событие — только при смене статуса
     if (prev !== nextEff) {
       this.dispatchEvent(
         new CustomEvent('health-change', {
@@ -219,7 +228,6 @@ export class ServiceHealthBadge extends HTMLElement {
 
     this._stateActual = nextEff;
 
-    // Визуал — с дебаунсом
     if (this._debounceT) {
       clearTimeout(this._debounceT);
       this._debounceT = undefined;
@@ -234,6 +242,93 @@ export class ServiceHealthBadge extends HTMLElement {
       );
     } else {
       this.#renderVisual(this._stateVisual);
+    }
+  }
+
+  // ========= Сетевой слой =========
+  /** Выполняет один запрос к endpoint с тайм-аутом и устойчивым парсингом. */
+  async refresh() {
+    const url = this._cfg.endpoint;
+    if (!url) return;
+
+    if (navigator && 'onLine' in navigator && navigator.onLine === false) {
+      this.setState('offline', null);
+      return;
+    }
+
+    // отмена предыдущего запроса
+    if (this._inflight) {
+      this._inflight.abort();
+    }
+    const ctrl = new AbortController();
+    this._inflight = ctrl;
+
+    const started =
+      typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    const to = setTimeout(() => ctrl.abort(), this._cfg.timeout);
+
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: ctrl.signal,
+        headers: { Accept: 'application/json' },
+      });
+      clearTimeout(to);
+
+      const text = await res.text();
+      let data = /** @type {any} */ ({});
+      if (text.length > 0) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          // 2xx с битым JSON → unknown + health-error
+          this.dispatchEvent(
+            new CustomEvent('health-error', { detail: { error: `JSON parse error: ${String(e)}` } })
+          );
+          this.setState('unknown', null);
+          return;
+        }
+      }
+
+      // Вычисление latency
+      /** @type {number|null} */
+      const latencyMs = Number.isFinite(data?.timings?.total_ms)
+        ? Math.round(Number(data.timings.total_ms))
+        : Math.round(
+            (typeof performance !== 'undefined' && performance.now
+              ? performance.now()
+              : Date.now()) - started
+          );
+
+      if (!res.ok) {
+        this.dispatchEvent(
+          new CustomEvent('health-error', { detail: { error: `HTTP ${res.status}` } })
+        );
+        this.setState('down', latencyMs);
+        return;
+      }
+
+      // Определение базового статуса
+      const s = data && typeof data.status === 'string' ? data.status.toLowerCase() : 'ok';
+      const base =
+        s === 'ok' || s === 'degraded' || s === 'down'
+          ? /** @type {HealthStatus} */ (s)
+          : 'unknown';
+
+      this.setState(base, latencyMs);
+    } catch (err) {
+      clearTimeout(to);
+      const isAbort =
+        err &&
+        typeof err === 'object' &&
+        'name' in /** @type {any} */ (err) &&
+        /** @type {any} */ (err).name === 'AbortError';
+      const msg = isAbort ? 'Timeout exceeded' : `Network/CORS error: ${String(err)}`;
+      this.dispatchEvent(new CustomEvent('health-error', { detail: { error: msg } }));
+      this.setState('down', null);
+    } finally {
+      if (this._inflight === ctrl) this._inflight = null;
     }
   }
 
@@ -292,24 +387,19 @@ export class ServiceHealthBadge extends HTMLElement {
     else this.removeAttribute('tabindex');
   }
 
-  /** Возвращает эффективный статус с учётом `degradedThresholdMs` и приоритетов состояний. */
   #applyThreshold(
     /** @type {HealthStatus} */ base,
     /** @type {number|null|undefined} */ latencyMs
   ) {
-    // Приоритет: down/offline — всегда важнее порога
     if (base === 'down' || base === 'offline') return base;
     if (base === 'unknown') return 'unknown';
-
     const thr = this._cfg.degradedThresholdMs || 0;
     const lat = Number.isFinite(latencyMs)
       ? /** @type {number} */ (latencyMs)
       : Number.isFinite(this._latencyMs)
         ? /** @type {number} */ (this._latencyMs)
         : NaN;
-
     if (thr > 0 && base === 'ok' && Number.isFinite(lat) && lat > thr) return 'degraded';
-    // Если уже пришёл degraded — оставляем degraded независимо от latency
     return base;
   }
 
@@ -317,7 +407,6 @@ export class ServiceHealthBadge extends HTMLElement {
     const prev = this._stateActual;
     const nextEff = this.#applyThreshold(this._lastInputStatus, this._latencyMs ?? undefined);
     if (prev !== nextEff) {
-      // уведомим об изменении статуса из‑за нового порога
       this.dispatchEvent(
         new CustomEvent('health-change', {
           detail: { status: nextEff, latencyMs: this._latencyMs, at: new Date().toISOString() },

@@ -95,5 +95,17 @@
       document.getElementById('okFast').onclick = () => el2.setState('ok', 80);
       document.getElementById('okSlow').onclick = () => el2.setState('ok', 900);
     </script>
+
+    <fieldset>
+      <legend>Сетевой запрос</legend>
+      <label>endpoint: <input type="text" id="ep" value="http://127.0.0.1:8080/health" size="40"/></label>
+      <button id="doFetch">fetch once</button>
+      <p><small>Используйте мок из E2.1: `?status=ok|degraded|down&latency=250`</small></p>
+    </fieldset>
+    <script type="module">
+      const el3 = document.getElementById('badge');
+      const ep = document.getElementById('ep');
+      document.getElementById('doFetch').onclick = () => { el3.endpoint = ep.value; el3.refresh(); };
+    </script>
   </body>
 </html>

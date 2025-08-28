@@ -5,6 +5,8 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
+  // Global ignores (flat config replaces .eslintignore)
+  { ignores: ['dist/**', 'node_modules/**'] },
   js.configs.recommended,
 
   {
@@ -60,6 +62,8 @@ export default [
     },
     rules: {
       'no-console': 'off',
+      // Avoid failing lint on unused test args/vars
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
 

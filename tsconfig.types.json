@@ -8,6 +8,6 @@
     "outDir": "dist/types",
     "types": []
   },
-    "include": ["src/**/*.js", "src/**/*.d.ts"],
-  "exclude": ["tests", "vitest.config.*"]
+  "include": ["src/**/*.js", "src/**/*.d.ts", "types/**/*.d.ts"],
+  "exclude": ["tests", "vitest.config.*", "node_modules", "dist"]
 }

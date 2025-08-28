@@ -301,6 +301,8 @@ export class ServiceHealthBadge extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent('health-change', {
           detail: { status: nextEff, latencyMs: this._latencyMs, at: new Date().toISOString() },
+          bubbles: true,
+          composed: true,
         })
       );
     }
@@ -362,7 +364,11 @@ export class ServiceHealthBadge extends HTMLElement {
           data = JSON.parse(text);
         } catch (e) {
           this.dispatchEvent(
-            new CustomEvent('health-error', { detail: { error: `JSON parse error: ${String(e)}` } })
+            new CustomEvent('health-error', {
+              detail: { error: `JSON parse error: ${String(e)}` },
+              bubbles: true,
+              composed: true,
+            })
           );
           this.setState('unknown', null);
           return false;
@@ -379,7 +385,11 @@ export class ServiceHealthBadge extends HTMLElement {
 
       if (!res.ok) {
         this.dispatchEvent(
-          new CustomEvent('health-error', { detail: { error: `HTTP ${res.status}` } })
+          new CustomEvent('health-error', {
+            detail: { error: `HTTP ${res.status}` },
+            bubbles: true,
+            composed: true,
+          })
         );
         this.setState('down', latencyMs);
         return false;
@@ -400,7 +410,13 @@ export class ServiceHealthBadge extends HTMLElement {
         'name' in /** @type {any} */ (err) &&
         /** @type {any} */ (err).name === 'AbortError';
       const msg = isAbort ? 'Timeout exceeded' : `Network/CORS error: ${String(err)}`;
-      this.dispatchEvent(new CustomEvent('health-error', { detail: { error: msg } }));
+      this.dispatchEvent(
+        new CustomEvent('health-error', {
+          detail: { error: msg },
+          bubbles: true,
+          composed: true,
+        })
+      );
       this.setState('down', null);
       return false;
     } finally {
@@ -485,6 +501,8 @@ export class ServiceHealthBadge extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent('health-change', {
           detail: { status: nextEff, latencyMs: this._latencyMs, at: new Date().toISOString() },
+          bubbles: true,
+          composed: true,
         })
       );
     }

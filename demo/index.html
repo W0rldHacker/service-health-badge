@@ -120,5 +120,20 @@
       document.getElementById('freeze').onclick = () => { frozen = true; window.fetch = async () => { throw new TypeError('Network down (mock)'); }; };
       document.getElementById('unfreeze').onclick = () => { frozen = false; window.fetch = origFetch; };
     </script>
+
+    <section>
+      <h3>TTI замер</h3>
+      <div id="perf-area"></div>
+      <button id="measure">Измерить TTI</button>
+      <output id="ttiOut"></output>
+    </section>
+    <script type="module">
+      import { measureTTIOnce } from './perf.js';
+      const out = document.getElementById('ttiOut');
+      document.getElementById('measure').onclick = async () => {
+        const tti = await measureTTIOnce();
+        out.textContent = `TTI: ${Math.round(tti)} ms`;
+      };
+    </script>
   </body>
 </html>

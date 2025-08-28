@@ -123,7 +123,7 @@ export class ServiceHealthBadge extends HTMLElement {
     window.addEventListener('online', this._onNet, { passive: true });
     window.addEventListener('offline', this._onNet, { passive: true });
 
-    if (this._cfg.endpoint) this._startPolling(true);
+    if (this._cfg.endpoint) requestAnimationFrame(() => this._startPolling(true));
     if ('onLine' in navigator && navigator.onLine === false) {
       this._stopPolling();
       this.setState('offline', null);
@@ -142,9 +142,8 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   attributeChangedCallback(name, _old, _val) {
-    if (this._syncing) return;
-    if (!this.isConnected) return;
-    if (name === 'dev-state') {
+    if (this._syncing || !this.isConnected) return;
+    if (__DEV__ && name === 'dev-state') {
       const s = this.getAttribute('dev-state');
       const allowed = ['unknown', 'ok', 'degraded', 'down', 'offline'];
       if (s && allowed.includes(s)) this.setState(/** @type {any} */ (s));

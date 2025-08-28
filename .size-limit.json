@@ -1,0 +1,8 @@
+[
+  {
+    "name": "service-health-badge",
+    "path": "dist/service-health-badge.js",
+    "limit": "5 KB",
+    "gzip": true
+  }
+]

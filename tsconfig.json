@@ -9,5 +9,10 @@
     "lib": ["ES2022", "DOM"],
     "types": ["vitest", "node"]
   },
-  "include": ["src/**/*.js", "tests/**/*.js", "vitest.config.*"]
+  "include": [
+    "src/**/*.js",
+    "tests/**/*.js",
+    "types/**/*.d.ts",
+    "vitest.config.*"
+  ]
 }

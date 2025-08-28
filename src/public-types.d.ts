@@ -16,7 +16,35 @@ export interface Labels {
   offline?: string;
 }
 
-export type { ServiceHealthBadge } from './index.js';
+export class ServiceHealthBadge extends HTMLElement {
+  constructor();
+  get focusable(): boolean;
+  set focusable(v: boolean);
+
+  get endpoint(): string | null;
+  set endpoint(v: string | null);
+
+  get interval(): number;
+  set interval(v: number);
+
+  get timeout(): number;
+  set timeout(v: number);
+
+  get labels(): Labels;
+  set labels(v: Labels);
+
+  get variant(): Variant;
+  set variant(v: Variant);
+
+  get showLatency(): boolean;
+  set showLatency(v: boolean);
+
+  get degradedThresholdMs(): number;
+  set degradedThresholdMs(v: number);
+
+  setState(status: HealthStatus, latencyMs?: number | null): void;
+  refresh(): Promise<boolean>;
+}
 
 declare global {
   interface HTMLElementTagNameMap {

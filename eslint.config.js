@@ -6,17 +6,16 @@ import globals from 'globals';
 
 export default [
   js.configs.recommended,
+
   {
-    files: ['**/*.js'],
+    files: ['src/**/*.js', 'demo/**/*.js'],
     ignores: ['dist/**', 'node_modules/**'],
     languageOptions: {
       parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: 'module',
-      },
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
       globals: {
         ...globals.browser,
+        __DEV__: 'readonly',
       },
     },
     plugins: { '@typescript-eslint': tsPlugin },
@@ -28,18 +27,35 @@ export default [
 
   {
     files: [
-      'mock/**/**/*.mjs',
-      'mocks/**/**/*.js',
-      'scripts/**/**/*.js',
-      'tools/**/**/*.js',
+      'build.mjs',
+      'scripts/**/*.mjs',
+      'scripts/**/*.js',
+      'mock/**/*.mjs',
+      'mock/**/*.js',
+      'mocks/**/*.js',
+      'tools/**/*.js',
       'vitest.config.*',
-      'eslint.config.*'
+      'eslint.config.*',
     ],
     languageOptions: {
       parser: tsParser,
       parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+      globals: { ...globals.node },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
+  {
+    files: ['tests/**/*.{js,ts}', 'e2e/**/*.{js,ts}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
       globals: {
+        ...globals.browser,
         ...globals.node,
+        ...globals.vitest,
       },
     },
     rules: {

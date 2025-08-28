@@ -66,7 +66,7 @@
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "@worldhacker/starpath": "file:../Starpath.js/worldhacker-starpath-0.6.2-F7Ib+1.98 (Polaris).tgz",
+    "@worldhacker/starpath": "file:vendor/worldhacker-starpath-0.6.2-F7Ib+1.98 (Polaris).tgz",
     "esbuild": "^0.25.9",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",

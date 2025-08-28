@@ -53,23 +53,31 @@ export class ServiceHealthBadge extends HTMLElement {
     /** @private */ this._lastDataTs = /** @type {number|null} */ (null);
     /** @private */ this._pendingVisual = /** @type {HealthStatus|undefined} */ (undefined);
 
+    /** @private */ this._wrap = /** @type {HTMLDivElement|null} */ (null);
+    /** @private */ this._labelEl = /** @type {HTMLSpanElement|null} */ (null);
+    /** @private */ this._latEl = /** @type {HTMLSpanElement|null} */ (null);
+
     this._root.innerHTML = `
       <style>
         :host {
-          display:inline-block; font: 500 var(--health-size, 0.875rem)/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-          color: var(--health-color-fg, currentColor); outline: none;
+          display:inline-block;
+          font: 500 var(--health-size, 0.875rem)/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+          color: var(--health-color-fg, currentColor);
+          outline: none;
         }
-        :host(:focus-visible) { outline: 2px solid var(--health-focus-ring, #2563eb); outline-offset: 2px; border-radius: var(--health-radius, .5rem); }
+        :host(:focus-visible) {
+          outline: 2px solid var(--health-focus-ring, #2563eb);
+          outline-offset: 2px;
+          border-radius: var(--health-radius, .5rem);
+        }
         .wrap { display:inline-flex; align-items:center; gap:.4em; padding:.25em .5em; border-radius: var(--health-radius, .5rem); background: var(--health-chip-bg, rgba(0,0,0,0.05)); }
         .dot { width:.6em; height:.6em; border-radius:50%; flex:0 0 auto; background: var(--health-bg-unknown, #6b7280); }
+        .wrap[data-s="ok"] .dot { background: var(--health-bg-ok, #16a34a); }
+        .wrap[data-s="degraded"] .dot { background: var(--health-bg-degraded, #f59e0b); }
+        .wrap[data-s="down"] .dot { background: var(--health-bg-down, #ef4444); }
+        .wrap[data-s="offline"] .dot { background: var(--health-bg-offline, #94a3b8); }
         .label { white-space:nowrap; }
         .lat { opacity:.7; font-variant-numeric: tabular-nums; }
-        .wrap[data-s="ok"]       .dot { background: var(--health-bg-ok, #16a34a); }
-        .wrap[data-s="degraded"] .dot { background: var(--health-bg-degraded, #f59e0b); }
-        .wrap[data-s="down"]     .dot { background: var(--health-bg-down, #ef4444); }
-        .wrap[data-s="offline"]  .dot { background: var(--health-bg-offline, #94a3b8); }
-        :host([variant="dot"]) .label, :host([variant="dot"]) .lat { display:none; }
-        :host([variant="chip"]) .lat { display:none; }
         @media (forced-colors: active) {
           .wrap { forced-color-adjust: none; background: Canvas; color: CanvasText; border: 1px solid CanvasText; }
           .wrap .dot { background: CanvasText; }
@@ -80,27 +88,26 @@ export class ServiceHealthBadge extends HTMLElement {
           :host(:focus-visible) { outline-color: Highlight; }
         }
       </style>
-      <div class="wrap" data-s="unknown" role="status" aria-live="polite" aria-atomic="true" title="">
-        <span class="dot" aria-hidden="true"></span>
-        <span class="label">${DEFAULTS.labels.unknown}</span>
-        <span class="lat"></span>
-      </div>`;
+      <!-- Разметка контента отрисовывается динамически в #renderMarkup() -->
+    `;
   }
 
   connectedCallback() {
     if (!this.hasAttribute('variant')) this.setAttribute('variant', DEFAULTS.variant);
     this.#readAttributes();
+    this._mountedAt = Date.now();
+    this.#renderMarkup();
     this.#applyFocusability();
     this.#renderVisual('unknown');
 
+    // Подписки
     this._onVis = () => {
       const vis = (typeof document !== 'undefined' && document.visibilityState) || 'visible';
       if (vis === 'visible') {
         this._backoffMs = this._cfg.interval;
         this._queueNext(0);
       } else {
-        const delay = Math.min(this._backoffMs * VIS_HIDDEN_MULT, 60000);
-        this._queueNext(delay);
+        this._queueNext(Math.min(this._backoffMs * VIS_HIDDEN_MULT, 60000));
       }
     };
     document.addEventListener('visibilitychange', this._onVis, { passive: true });
@@ -110,18 +117,13 @@ export class ServiceHealthBadge extends HTMLElement {
         this._stopPolling();
         this.setState('offline', null);
       } else {
-        if (this._cfg.endpoint) {
-          this._startPolling(true);
-        }
+        if (this._cfg.endpoint) this._startPolling(true);
       }
     };
     window.addEventListener('online', this._onNet, { passive: true });
     window.addEventListener('offline', this._onNet, { passive: true });
 
-    this._mountedAt = Date.now();
-
     if (this._cfg.endpoint) this._startPolling(true);
-
     if ('onLine' in navigator && navigator.onLine === false) {
       this._stopPolling();
       this.setState('offline', null);
@@ -142,16 +144,21 @@ export class ServiceHealthBadge extends HTMLElement {
   attributeChangedCallback(name, _old, _val) {
     if (this._syncing) return;
     if (!this.isConnected) return;
-
     if (name === 'dev-state') {
       const s = this.getAttribute('dev-state');
       const allowed = ['unknown', 'ok', 'degraded', 'down', 'offline'];
       if (s && allowed.includes(s)) this.setState(/** @type {any} */ (s));
       return;
     }
-
+    const prevVariant = this._cfg.variant;
     this.#readAttributes();
     if (name === 'focusable') this.#applyFocusability();
+
+    if (name === 'variant' && this._cfg.variant !== prevVariant) {
+      this.#renderMarkup();
+      this.#renderVisual(this._stateVisual);
+      return;
+    }
 
     if (name === 'endpoint' || name === 'interval' || name === 'timeout') {
       this._stopPolling();
@@ -163,6 +170,28 @@ export class ServiceHealthBadge extends HTMLElement {
       return;
     }
     this.#renderVisual(this._stateVisual);
+  }
+
+  #renderMarkup() {
+    const labels = this._cfg.labels || DEFAULTS.labels;
+    const s = this._stateVisual || 'unknown';
+    const wrapAttrs = 'class="wrap" role="status" aria-live="polite" aria-atomic="true"';
+
+    let html = '';
+    if (this._cfg.variant === 'dot') {
+      html = `<div ${wrapAttrs} data-s="${s}" aria-label="${labels[s] || labels.unknown}">\n <span class="dot" aria-hidden="true"></span>\n </div>`;
+    } else if (this._cfg.variant === 'chip') {
+      html = `<div ${wrapAttrs} data-s="${s}">\n <span class="dot" aria-hidden="true"></span>\n <span class="label">${labels[s] || labels.unknown}</span>\n </div>`;
+    } else {
+      html = `<div ${wrapAttrs} data-s="${s}">\n <span class="dot" aria-hidden="true"></span>\n <span class="label">${labels[s] || labels.unknown}</span>\n <span class="lat"></span>\n </div>`;
+    }
+
+    const styleEl = /** @type {HTMLStyleElement|null} */ (this._root.querySelector('style'));
+    this._root.innerHTML = styleEl ? styleEl.outerHTML + html : html;
+
+    this._wrap = /** @type {HTMLDivElement|null} */ (this._root.querySelector('.wrap'));
+    this._labelEl = /** @type {HTMLSpanElement|null} */ (this._root.querySelector('.label'));
+    this._latEl = /** @type {HTMLSpanElement|null} */ (this._root.querySelector('.lat'));
   }
 
   _startPolling(immediate = false) {
@@ -525,7 +554,7 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   #updateTitle() {
-    const wrap = this._root.querySelector('.wrap');
+    const wrap = this._wrap;
     if (!wrap) return;
     const parts = [
       `Status: ${this._cfg.labels[this._stateVisual] || this._cfg.labels.unknown}`,
@@ -535,24 +564,28 @@ export class ServiceHealthBadge extends HTMLElement {
     if (Number.isFinite(this._latencyMs)) parts.push(`Latency: ${this._latencyMs} ms`);
     if (this._cfg.degradedThresholdMs > 0)
       parts.push(`Degraded≥${this._cfg.degradedThresholdMs} ms`);
-
     const since = this._lastDataTs ?? this._mountedAt;
     const isStale = Date.now() - since > this._cfg.interval * 2;
     if (isStale) parts.push('Данные устарели');
-
-    wrap.setAttribute('title', parts.join(' • '));
+    wrap.title = parts.join(' • ');
+    if (this._cfg.variant === 'dot')
+      wrap.setAttribute(
+        'aria-label',
+        this._cfg.labels[this._stateVisual] || this._cfg.labels.unknown
+      );
   }
 
   #renderVisual(/** @type {HealthStatus} */ status) {
-    const wrap = this._root.querySelector('.wrap');
-    const labelEl = this._root.querySelector('.label');
-    const latEl = this._root.querySelector('.lat');
-    if (!wrap || !labelEl || !latEl) return;
+    const wrap = this._wrap;
+    if (!wrap) return;
+    const labelEl = this._labelEl;
+    const latEl = this._latEl;
     requestAnimationFrame(() => {
       wrap.setAttribute('data-s', status);
-      labelEl.textContent = this._cfg.labels[status] || this._cfg.labels.unknown;
-      latEl.textContent =
-        this._cfg.showLatency && Number.isFinite(this._latencyMs) ? `${this._latencyMs} ms` : '';
+      if (labelEl) labelEl.textContent = this._cfg.labels[status] || this._cfg.labels.unknown;
+      if (latEl)
+        latEl.textContent =
+          this._cfg.showLatency && Number.isFinite(this._latencyMs) ? `${this._latencyMs} ms` : '';
       this.#updateTitle();
     });
   }

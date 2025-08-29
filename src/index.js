@@ -115,8 +115,13 @@ export class ServiceHealthBadge extends HTMLElement {
     this._onNet = () => {
       if ('onLine' in navigator && navigator.onLine === false) {
         this._stopPolling();
+        if (this._inflight) {
+          this._inflight.abort();
+          this._inflight = null;
+        }
         this.setState('offline', null);
       } else {
+        this.setState('unknown', null);
         if (this._cfg.endpoint) this._startPolling(true);
       }
     };
@@ -194,6 +199,9 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   _startPolling(immediate = false) {
+    if ('onLine' in navigator && navigator.onLine === false) {
+      return;
+    }
     this._backoffMs = this._cfg.interval;
     this._queueNext(immediate ? 0 : this._backoffMs);
   }

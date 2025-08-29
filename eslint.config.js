@@ -61,6 +61,7 @@ export default [
       },
     },
     rules: {
+      'no-undef': 'off',
       'no-console': 'off',
       // Avoid failing lint on unused test args/vars
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

@@ -107,7 +107,7 @@ export class ServiceHealthBadge extends HTMLElement {
         this._backoffMs = this._cfg.interval;
         this._queueNext(0);
       } else {
-        this._queueNext(Math.min(this._backoffMs * VIS_HIDDEN_MULT, 60000));
+        this._queueNext(this._backoffMs);
       }
     };
     document.addEventListener('visibilitychange', this._onVis, { passive: true });
@@ -195,13 +195,21 @@ export class ServiceHealthBadge extends HTMLElement {
 
   _startPolling(immediate = false) {
     this._backoffMs = this._cfg.interval;
-    this._queueNext(immediate ? 0 : this._withVisibility(this._backoffMs));
+    this._queueNext(immediate ? 0 : this._backoffMs);
   }
 
   _stopPolling() {
-    if (this._timer) {
+    if (this._timer !== undefined) {
       clearTimeout(this._timer);
       this._timer = undefined;
+    }
+    if (this._inflight) {
+      try {
+        this._inflight.abort();
+      } catch {
+        /* */
+      }
+      this._inflight = null;
     }
   }
 
@@ -214,7 +222,7 @@ export class ServiceHealthBadge extends HTMLElement {
   _withVisibility(ms) {
     const vis = (typeof document !== 'undefined' && document.visibilityState) || 'visible';
     const mult = vis === 'visible' ? 1 : VIS_HIDDEN_MULT;
-    return Math.min(Math.max(0 | ms, 0), 60000) * mult;
+    return Math.min(Math.max(ms | 0, 0) * mult, 60000);
   }
 
   async _pollOnce() {
@@ -383,7 +391,23 @@ export class ServiceHealthBadge extends HTMLElement {
         signal: ctrl.signal,
         headers: { Accept: 'application/json' },
       });
-      clearTimeout(to);
+
+      const measured = Math.round(
+        (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) -
+          started
+      );
+
+      if (!res.ok) {
+        this.dispatchEvent(
+          new CustomEvent('health-error', {
+            detail: { error: `HTTP ${res.status}` },
+            bubbles: true,
+            composed: true,
+          })
+        );
+        this.setState('down', measured);
+        return false;
+      }
 
       const text = await res.text();
       let data = {};
@@ -405,33 +429,18 @@ export class ServiceHealthBadge extends HTMLElement {
 
       const latencyMs = Number.isFinite(data?.timings?.total_ms)
         ? Math.round(Number(data.timings.total_ms))
-        : Math.round(
-            (typeof performance !== 'undefined' && performance.now
-              ? performance.now()
-              : Date.now()) - started
-          );
-
-      if (!res.ok) {
-        this.dispatchEvent(
-          new CustomEvent('health-error', {
-            detail: { error: `HTTP ${res.status}` },
-            bubbles: true,
-            composed: true,
-          })
-        );
-        this.setState('down', latencyMs);
-        return false;
-      }
+        : measured;
 
       this._lastDataTs = Date.now();
 
       const s = data && typeof data.status === 'string' ? data.status.toLowerCase() : 'ok';
       const base =
-        s === 'ok' || s === 'degraded' || s === 'down' ? /** @type {any} */ (s) : 'unknown';
+        s === 'ok' || s === 'degraded' || s === 'down'
+          ? /** @type {'ok'|'degraded'|'down'} */ (s)
+          : 'unknown';
       this.setState(base, latencyMs);
       return base === 'ok' || base === 'degraded';
     } catch (err) {
-      clearTimeout(to);
       const isAbort =
         err &&
         typeof err === 'object' &&
@@ -439,15 +448,12 @@ export class ServiceHealthBadge extends HTMLElement {
         /** @type {any} */ (err).name === 'AbortError';
       const msg = isAbort ? 'Timeout exceeded' : `Network/CORS error: ${String(err)}`;
       this.dispatchEvent(
-        new CustomEvent('health-error', {
-          detail: { error: msg },
-          bubbles: true,
-          composed: true,
-        })
+        new CustomEvent('health-error', { detail: { error: msg }, bubbles: true, composed: true })
       );
       this.setState('down', null);
       return false;
     } finally {
+      clearTimeout(to);
       if (this._inflight === ctrl) this._inflight = null;
     }
   }

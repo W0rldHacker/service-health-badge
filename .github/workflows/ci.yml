@@ -29,6 +29,8 @@ jobs:
         run: npm run build
       - name: Tests + Coverage
         run: npm run coverage
+      - name: E2E tests (Playwright)
+        run: npm run test:e2e
       - name: Size Gate (≤ 5 KB gzip)
         run: npm run size
       - name: Upload coverage (artifact)

@@ -148,6 +148,10 @@ export class ServiceHealthBadge extends HTMLElement {
 
   attributeChangedCallback(name, _old, _val) {
     if (this._syncing || !this.isConnected) return;
+    if (name === 'focusable') {
+      this.#applyFocusability();
+      return;
+    }
     if (__DEV__ && name === 'dev-state') {
       const s = this.getAttribute('dev-state');
       const allowed = ['unknown', 'ok', 'degraded', 'down', 'offline'];
@@ -156,7 +160,6 @@ export class ServiceHealthBadge extends HTMLElement {
     }
     const prevVariant = this._cfg.variant;
     this.#readAttributes();
-    if (name === 'focusable') this.#applyFocusability();
 
     if (name === 'variant' && this._cfg.variant !== prevVariant) {
       this.#renderMarkup();
@@ -250,13 +253,10 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   get focusable() {
-    return !!this._cfg.focusable;
+    return this.hasAttribute('focusable');
   }
-  set focusable(b) {
-    this._cfg.focusable = !!b;
-    if (this._cfg.focusable) this.#reflect('focusable', '');
-    else this.#reflectRemove('focusable');
-    this.#applyFocusability();
+  set focusable(v) {
+    v ? this.setAttribute('focusable', '') : this.removeAttribute('focusable');
   }
 
   get endpoint() {
@@ -516,8 +516,14 @@ export class ServiceHealthBadge extends HTMLElement {
   }
 
   #applyFocusability() {
-    if (this._cfg.focusable) this.setAttribute('tabindex', '0');
-    else this.removeAttribute('tabindex');
+    const want = this.hasAttribute('focusable');
+    if (want) {
+      this.tabIndex = 0;
+      this.setAttribute('tabindex', '0');
+    } else {
+      this.tabIndex = -1;
+      this.removeAttribute('tabindex');
+    }
   }
 
   #applyThreshold(
@@ -581,11 +587,10 @@ export class ServiceHealthBadge extends HTMLElement {
     const isStale = Date.now() - since > this._cfg.interval * 2;
     if (isStale) parts.push('Данные устарели');
     wrap.title = parts.join(' • ');
-    if (this._cfg.variant === 'dot')
-      wrap.setAttribute(
-        'aria-label',
-        this._cfg.labels[this._stateVisual] || this._cfg.labels.unknown
-      );
+    wrap.setAttribute(
+      'aria-label',
+      this._cfg.labels[this._stateVisual] || this._cfg.labels.unknown
+    );
   }
 
   #renderVisual(/** @type {HealthStatus} */ status) {

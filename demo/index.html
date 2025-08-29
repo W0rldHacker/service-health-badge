@@ -6,11 +6,38 @@
     <title>service-health-badge — E4.1 demo</title>
     <script type="module" src="/dist/service-health-badge.js"></script>
     <style>
-      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-      .row { display:flex; gap:1rem; align-items:center; margin:.5rem 0; }
-      fieldset { border:1px solid #e5e7eb; border-radius:.5rem; padding:1rem; margin-top:1rem; }
-      label { display:flex; gap:.5rem; align-items:center; margin:.25rem 0; }
-      code { background:#f3f4f6; padding:.1rem .35rem; border-radius:.35rem; }
+      body {
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        margin: 2rem;
+      }
+      .row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin: 0.5rem 0;
+      }
+      fieldset {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+      label {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0.25rem 0;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.35rem;
+      }
       .dashboard-status service-health-badge {
         --health-size: 0.8125rem;
         --health-radius: 0.375rem;
@@ -27,15 +54,14 @@
     <h1>service-health-badge — E4.1</h1>
 
     <div class="row dashboard-status">
-      <service-health-badge id="badge" focusable
-        variant="badge">
-      </service-health-badge>
+      <service-health-badge id="badge" focusable variant="badge"> </service-health-badge>
       <code>variant="badge"</code>
     </div>
 
     <fieldset>
       <legend>Управление состоянием</legend>
-      <label>Статус:
+      <label
+        >Статус:
         <select id="state">
           <option value="unknown">unknown</option>
           <option value="ok">ok</option>
@@ -48,7 +74,10 @@
       <button id="apply">Применить</button>
 
       <hr />
-      <label><input type="checkbox" id="shake" /> Смоделировать дрожание (переключать ok↔degraded каждые 200мс)</label>
+      <label
+        ><input type="checkbox" id="shake" /> Смоделировать дрожание (переключать ok↔degraded
+        каждые 200мс)</label
+      >
     </fieldset>
 
     <script type="module">
@@ -56,7 +85,9 @@
       const $ = (id) => document.getElementById(id);
 
       $('apply').addEventListener('click', () => {
-        const s = /** @type {import('../dist/types/src/index.d.ts').HealthStatus} */($('state').value);
+        const s = /** @type {import('../dist/types/src/index.d.ts').HealthStatus} */ (
+          $('state').value
+        );
         const lat = Number($('lat').value);
         el.setAttribute('dev-state', s);
         el.setState(s, lat);
@@ -68,7 +99,7 @@
           let flag = false;
           const tick = () => {
             flag = !flag;
-            el.setState(flag ? 'ok' : 'degraded', 50 + Math.round(Math.random()*50));
+            el.setState(flag ? 'ok' : 'degraded', 50 + Math.round(Math.random() * 50));
             t = setTimeout(tick, 200);
           };
           tick();
@@ -80,7 +111,9 @@
 
     <fieldset>
       <legend>Пороговая деградация</legend>
-      <label>degraded-threshold-ms: <input type="number" id="thr" value="0" min="0" step="50" /></label>
+      <label
+        >degraded-threshold-ms: <input type="number" id="thr" value="0" min="0" step="50"
+      /></label>
       <button id="okFast">OK (80ms)</button>
       <button id="okSlow">OK (900ms)</button>
     </fieldset>
@@ -98,27 +131,42 @@
 
     <fieldset>
       <legend>Сетевой запрос</legend>
-      <label>endpoint: <input type="text" id="ep" value="http://127.0.0.1:8080/health" size="40"/></label>
+      <label
+        >endpoint: <input type="text" id="ep" value="http://127.0.0.1:8080/health" size="40"
+      /></label>
       <button id="doFetch">fetch once</button>
       <p><small>Используйте мок из E2.1: `?status=ok|degraded|down&latency=250`</small></p>
     </fieldset>
     <script type="module">
       const el3 = document.getElementById('badge');
       const ep = document.getElementById('ep');
-      document.getElementById('doFetch').onclick = () => { el3.endpoint = ep.value; el3.refresh(); };
+      document.getElementById('doFetch').onclick = () => {
+        el3.endpoint = ep.value;
+        el3.refresh();
+      };
     </script>
 
     <fieldset>
       <legend>Stale‑guard</legend>
       <button id="freeze">Заморозить данные (имитировать ошибки)</button>
       <button id="unfreeze">Снять заморозку</button>
-      <p><small>Подсказка «Данные устарели» появится через 2×interval без валидных ответов.</small></p>
+      <p>
+        <small>Подсказка «Данные устарели» появится через 2×interval без валидных ответов.</small>
+      </p>
     </fieldset>
     <script type="module">
       let frozen = false;
       const origFetch = window.fetch.bind(window);
-      document.getElementById('freeze').onclick = () => { frozen = true; window.fetch = async () => { throw new TypeError('Network down (mock)'); }; };
-      document.getElementById('unfreeze').onclick = () => { frozen = false; window.fetch = origFetch; };
+      document.getElementById('freeze').onclick = () => {
+        frozen = true;
+        window.fetch = async () => {
+          throw new TypeError('Network down (mock)');
+        };
+      };
+      document.getElementById('unfreeze').onclick = () => {
+        frozen = false;
+        window.fetch = origFetch;
+      };
     </script>
 
     <section>
@@ -135,5 +183,11 @@
         out.textContent = `TTI: ${Math.round(tti)} ms`;
       };
     </script>
+
+    <div class="wrap" data-s="ok" role="status" aria-live="polite" aria-atomic="true">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="label">OK</span>
+      <span class="lat">123 ms</span>
+    </div>
   </body>
 </html>

@@ -152,7 +152,7 @@ export class ServiceHealthBadge extends HTMLElement {
       this.#applyFocusability();
       return;
     }
-    if (__DEV__ && name === 'dev-state') {
+    if (name === 'dev-state') {
       const s = this.getAttribute('dev-state');
       const allowed = ['unknown', 'ok', 'degraded', 'down', 'offline'];
       if (s && allowed.includes(s)) this.setState(/** @type {any} */ (s));

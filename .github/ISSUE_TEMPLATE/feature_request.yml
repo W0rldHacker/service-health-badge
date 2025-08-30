@@ -1,0 +1,60 @@
+name: "Feature request"
+description: "Suggest an idea or improvement"
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing an improvement! Please focus on the problem first, then the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / user need
+      description: What’s the user problem or limitation you want to solve?
+      placeholder: As a ..., I want ... so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the change (API/UX). Include examples or pseudo‑code.
+      placeholder: |
+        New attribute: `degraded-threshold-ms`
+        Behavior: when latency > X while status is `ok`, render as `degraded`.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you tried or considered.
+  - type: textarea
+    id: api_surface
+    attributes:
+      label: API surface
+      description: Note any new/changed attributes, properties, events, or CSS tokens.
+      placeholder: Attributes, properties, events, CSS variables, accessibility impact
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility
+      options:
+        - label: No breaking changes
+        - label: Minimal bundle size impact
+        - label: Accessible by default (a11y)
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete outcomes that define success.
+      placeholder: |
+        - When X, then Y is shown
+        - Event Z fires with payload {...}
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context / screenshots
+      description: Any extra information (mockups, links).
+

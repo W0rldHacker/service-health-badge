@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation (English)
+    url: https://github.com/W0rldHacker/service-health-badge/tree/main/docs/en
+    about: Read the docs before filing an issue.
+  - name: Документация (Русский)
+    url: https://github.com/W0rldHacker/service-health-badge/tree/main/docs
+    about: Прочтите документацию перед созданием issue.
+  - name: README
+    url: https://github.com/W0rldHacker/service-health-badge#readme
+    about: Project overview, quick start, and links.

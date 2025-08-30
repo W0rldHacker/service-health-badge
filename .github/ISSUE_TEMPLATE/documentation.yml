@@ -1,0 +1,47 @@
+name: "Documentation update"
+description: "Report an issue in docs or request an addition"
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve the docs. Please include links to the page(s) and concrete suggestions.
+  - type: input
+    id: page
+    attributes:
+      label: Docs page URL or path
+      description: Link to the page (EN or RU) that needs work.
+      placeholder: docs/en/usage.md
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Russian
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What’s wrong or missing?
+      description: Describe the problem (typo, outdated info, missing section, unclear wording, etc.).
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: Provide the corrected text or outline of what should be added.
+      placeholder: Provide a snippet or bullet points.
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Pull request
+      options:
+        - label: I am willing to open a PR with the fix
+

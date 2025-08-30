@@ -1,0 +1,49 @@
+name: "Accessibility issue (A11y)"
+description: "Report an accessibility problem (screen readers, keyboard, contrast, etc.)"
+labels: ["a11y", "bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please include the assistive technology, OS, and browser you used, and steps to reproduce.
+  - type: textarea
+    id: at
+    attributes:
+      label: Assistive technology and environment
+      description: NVDA/JAWS/VoiceOver/TalkBack, OS version, browser version.
+      placeholder: NVDA 2024.2 on Windows 11, Chrome 127
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Clear step-by-step instructions.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected announcement/behavior
+      placeholder: Screen reader should announce role "status" and the current label once per change.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual announcement/behavior
+      placeholder: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: wcag
+    attributes:
+      label: WCAG criteria (if applicable)
+      description: Reference the relevant success criteria, if known (e.g., 1.4.3 Contrast (Minimum)).
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes / recordings
+      description: Provide recordings, logs, or screenshots if possible.
+

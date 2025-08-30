@@ -1,0 +1,113 @@
+name: "Bug report"
+description: "Report a problem with service-health-badge"
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a bug report!
+        Please do not include secrets (tokens, internal URLs). Redact sensitive data.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      description: Help us triage faster by checking these boxes.
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: I read the docs (EN/RU) and couldn't resolve the issue.
+          required: true
+        - label: I reproduced on the latest version (npm or CDN).
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: npm package version or CDN version (e.g., 0.11.0 or "latest").
+      placeholder: e.g., 0.11.0
+    validations:
+      required: true
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Variant
+      options:
+        - dot
+        - chip
+        - badge
+    validations:
+      required: true
+  - type: textarea
+    id: endpoint
+    attributes:
+      label: Endpoint and CORS
+      description: |
+        Provide sanitized details on your `/health` endpoint and CORS setup.
+        Include relevant response/request headers (e.g., Access-Control-Allow-Origin, Cache-Control) if the issue seems CORS/cache related.
+      placeholder: |
+        GET https://api.example.com/health
+        Access-Control-Allow-Origin: *
+        Cache-Control: no-store
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Precise steps to reproduce the issue.
+      placeholder: |
+        1. Go to demo page / minimal snippet
+        2. Set endpoint to ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What actually happened (include screenshots/recordings if helpful)?
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output and network details
+      description: Include relevant console errors and the raw `/health` response payload (redacted).
+      render: shell
+  - type: input
+    id: repro_link
+    attributes:
+      label: Minimal reproduction URL
+      description: Link to a minimal repro (StackBlitz/CodeSandbox/Gist/repo).
+      placeholder: https://stackblitz.com/...
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low (edge case, workaround exists)
+        - Medium (affects normal usage)
+        - High (blocks adoption/production)
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, browser + version, Node.js, package manager, build tool.
+      placeholder: |
+        OS: Windows 11 / macOS 14 / Ubuntu 22.04
+        Browser: Chrome 127, Firefox 129, Safari 17.5
+        Node: 22.x; Package Manager: npm 11; Build: esbuild
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Any other details that might be helpful.
+

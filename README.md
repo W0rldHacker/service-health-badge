@@ -1,6 +1,5 @@
 <div align="center">
 
-  <!-- Project Logo (inline SVG, renders on GitHub) -->
   <svg width="640" height="140" viewBox="0 0 640 140" role="img" aria-label="service-health-badge">
     <defs>
       <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -26,8 +25,6 @@
 
   <br/>
 
-  <!-- Badges -->
-
 <a href="https://www.npmjs.com/package/@worldhacker/service-health-badge"><img alt="npm" src="https://img.shields.io/npm/v/%40worldhacker%2Fservice-health-badge.svg?label=npm&color=27AE60" /></a>
 <a href="https://github.com/W0rldHacker/service-health-badge/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/W0rldHacker/service-health-badge/actions/workflows/ci.yml/badge.svg" /></a>
 <img alt="types" src="https://img.shields.io/badge/types-included-2F80ED" />
@@ -35,8 +32,6 @@
 <img alt="license" src="https://img.shields.io/badge/license-MIT-5965E0" />
 
   <br/>
-
-  <!-- CTA buttons (shields as buttons for consistent GH rendering) -->
 
 <a href="#quick-start"><img alt="Start" src="https://img.shields.io/badge/🚀_Quick_Start-111827?labelColor=111827&color=2563EB" /></a>
 <a href="docs/en/index.md"><img alt="Docs" src="https://img.shields.io/badge/📚_Docs-111827?labelColor=111827&color=10B981" /></a>

@@ -4,7 +4,7 @@ contact_links:
     url: https://github.com/W0rldHacker/service-health-badge/tree/main/docs/en
     about: Read the docs before filing an issue.
   - name: Документация (Русский)
-    url: https://github.com/W0rldHacker/service-health-badge/tree/main/docs
+    url: https://github.com/W0rldHacker/service-health-badge/tree/main/docs/ru
     about: Прочтите документацию перед созданием issue.
   - name: README
     url: https://github.com/W0rldHacker/service-health-badge#readme

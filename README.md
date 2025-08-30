@@ -3,6 +3,7 @@
   <img src="docs/media/logo.svg" alt="service-health-badge" width="640" />
 
   <br/>
+  <br/>
 
 <a href="https://www.npmjs.com/package/@worldhacker/service-health-badge"><img alt="npm" src="https://img.shields.io/npm/v/%40worldhacker%2Fservice-health-badge.svg?label=npm&color=27AE60" /></a>
 <a href="https://github.com/W0rldHacker/service-health-badge/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/W0rldHacker/service-health-badge/actions/workflows/ci.yml/badge.svg" /></a>

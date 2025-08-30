@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="140" viewBox="0 0 640 140" role="img" aria-label="service-health-badge">
   <defs>
     <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#111827"/>
-      <stop offset="100%" stop-color="#0b1220"/>
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#0d1117"/>
     </linearGradient>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0ea5e9"/>
@@ -11,13 +11,12 @@
   </defs>
   <rect x="0" y="0" width="640" height="140" rx="16" fill="url(#g2)"/>
   <g transform="translate(28,28)">
-    <rect x="0" y="0" width="220" height="84" rx="12" fill="#0b1220" stroke="#1f2937"/>
-    <circle cx="30" cy="42" r="10" fill="#16a34a"/>
-    <text x="50" y="48" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="22" fill="#e5e7eb">OK</text>
-    <text x="50" y="70" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#9ca3af">23 ms</text>
+    <rect x="0" y="0" width="220" height="84" rx="12" fill="#0E1218" stroke="#1f2937"/>
+    <circle cx="33" cy="42" r="7" fill="#16a34a"/>
+    <text x="48" y="50" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="22" fill="#e5e7eb" font-weight="500">OK</text>
+    <text x="85" y="50" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" fill="#9ca3af" font-weight="500">12 ms</text>
   </g>
   <text x="270" y="64" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-weight="700" font-size="28" fill="#e5e7eb">service-health-badge</text>
   <text x="270" y="96" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="16" fill="#9ca3af">Embeddable Web Component for service status</text>
   <rect x="16" y="16" width="608" height="108" rx="14" fill="none" stroke="url(#g)" opacity="0.35"/>
 </svg>
-

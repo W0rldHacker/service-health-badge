@@ -220,4 +220,4 @@ The demo UI lets you switch server vs. local fetch stub.
 
 ## License
 
-MIT © 2024 — see `LICENSE`.
+MIT © 2025 — see `LICENSE`.
